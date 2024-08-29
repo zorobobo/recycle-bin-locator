@@ -247,6 +247,15 @@
 
         // Geolocation functionality
         locationButton.addEventListener('click', function() {
+            // Clear the search input
+            searchInput.value = '';
+    
+            // Reset the bin list to show all bins
+            renderBinList(bins);
+    
+            // Show all markers on the map
+            markers.forEach(marker => marker.addTo(map));
+            
             if ("geolocation" in navigator) {
                 navigator.geolocation.getCurrentPosition(function(position) {
                     const userLat = position.coords.latitude;
