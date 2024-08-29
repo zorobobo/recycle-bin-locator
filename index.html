@@ -6,9 +6,7 @@
     <title>EnviroCODE - Recycle Bin Locator</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/leaflet.css" />
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.1/css/all.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="https://unpkg.com/leaflet-routing-machine@3.2.12/dist/leaflet-routing-machine.css" />
-    <script src="https://unpkg.com/leaflet-routing-machine@3.2.12/dist/leaflet-routing-machine.js"></script>
-
+    
     <!-- iOS-specific meta tags -->
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -192,8 +190,6 @@
             attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
         }).addTo(map);
 
-        let routingControl = null;
-
         // Create bin list
         const binListContainer = document.querySelector('.bin-list-container');
         const binListItems = document.getElementById('bin-list-items');
@@ -228,30 +224,10 @@
 
         function selectBin(bin) {
             map.setView([bin.lat, bin.lng], 16);
-
-            if ("geolocation" in navigator) {
-                navigator.geolocation.getCurrentPosition(function(position) {
-                    const userLat = position.coords.latitude;
-                    const userLng = position.coords.longitude;
-
-                    if (routingControl) {
-                        map.removeControl(routingControl);
-                    }
-
-                    routingControl = L.Routing.control({
-                        waypoints: [
-                            L.latLng(userLat, userLng),
-                            L.latLng(bin.lat, bin.lng)
-                        ],
-                        routeWhileDragging: true
-                    }).addTo(map);
-                }, function(error) {
-                    console.error("Error: " + error.message);
-                    alert("Unable to retrieve your location. Routing is not available.");
-                });
-            } else {
-                alert("Geolocation is not supported by your browser. Routing is not available.");
-            }
+            L.popup()
+                .setLatLng([bin.lat, bin.lng])
+                .setContent(`<strong>${bin.name}</strong><br>Latitude: ${bin.lat}<br>Longitude: ${bin.lng}`)
+                .openOn(map);
         }
 
         // Add markers to the map
@@ -308,14 +284,10 @@
                         }
                     });
 
-                    // Center map on user location
+                    // Center map on user location and show nearest bin
                     map.setView([userLat, userLng], 16);
-
-                    // Add user location marker
                     L.marker([userLat, userLng]).addTo(map)
                         .bindPopup('Your Location').openPopup();
-
-                    // Call selectBin to set up routing to nearest bin
                     selectBin(nearestBin);
                 }, function(error) {
                     console.error("Error: " + error.message);
