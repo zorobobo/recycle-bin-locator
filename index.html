@@ -134,7 +134,7 @@
     <div class="container">
         <div id="bin-list">
             <div class="header" role="banner">
-                <i class="fas fa-recycle" aria-hidden="true"></i> EnviroCODE - Recycle Bin Locator oleh SKPK Jalan Batu
+                <i class="fas fa-recycle" aria-hidden="true"></i> EnviroCODE - Bin Locator
             </div>
             <div class="search-container">
                 <input type="text" id="search-input" placeholder="Taip untuk cari Tong Kitar Semula..." aria-label="Taip untuk cari Tong Kitar Semula">
@@ -255,7 +255,7 @@
     
             // Show all markers on the map
             markers.forEach(marker => marker.addTo(map));
-            
+
             if ("geolocation" in navigator) {
                 navigator.geolocation.getCurrentPosition(function(position) {
                     const userLat = position.coords.latitude;
