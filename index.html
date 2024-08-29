@@ -12,11 +12,8 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="EnviroCODE">
     
-    <!-- Home screen icon-->
+    <!-- Home screen icon -->
     <link rel="apple-touch-icon" href="icon.png" sizes="180x180">
-    
-    <!-- Splash screen images -->
-    <!-- <link rel="apple-touch-startup-image" href="/api/placeholder/1125/2436" media="(device-width: 375px) and (device-height: 812px) and (-webkit-device-pixel-ratio: 3)">-->
     
     <style>
         body, html {
@@ -38,6 +35,8 @@
             overflow-y: auto;
             background-color: #ffffff;
             box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+            display: flex;
+            flex-direction: column;
         }
         #map {
             flex-grow: 1;
@@ -50,6 +49,21 @@
             text-align: center;
             font-size: 24px;
             font-weight: bold;
+        }
+        .search-container {
+            padding: 10px;
+            background-color: #f0f0f0;
+        }
+        #search-input {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 16px;
+        }
+        .bin-list-container {
+            flex-grow: 1;
+            overflow-y: auto;
         }
         .bin-item {
             cursor: pointer;
@@ -113,9 +127,14 @@
             <div class="header" role="banner">
                 <i class="fas fa-recycle" aria-hidden="true"></i> EnviroCODE - Recycle Bin Locator by SKPK Jalan Batu
             </div>
-            <nav aria-label="Recycle bin locations">
-                <ul id="bin-list-items" class="sr-only"></ul>
-            </nav>
+            <div class="search-container">
+                <input type="text" id="search-input" placeholder="Search for a recycle bin..." aria-label="Search for a recycle bin">
+            </div>
+            <div class="bin-list-container">
+                <nav aria-label="Recycle bin locations">
+                    <ul id="bin-list-items" class="sr-only"></ul>
+                </nav>
+            </div>
             <div class="copyright">
                 © 2024 Murid-murid Sekolah Kebangsaan Pendidikan Khas Jalan Batu (Buta), Kuala Lumpur. Hak Cipta Terpelihara.
             </div>
@@ -146,9 +165,11 @@
         }).addTo(map);
 
         // Create bin list
-        const binList = document.getElementById('bin-list');
+        const binListContainer = document.querySelector('.bin-list-container');
         const binListItems = document.getElementById('bin-list-items');
-        bins.forEach(bin => {
+        const searchInput = document.getElementById('search-input');
+
+        function createBinItem(bin) {
             const binItem = document.createElement('div');
             binItem.className = 'bin-item';
             binItem.setAttribute('tabindex', '0');
@@ -167,8 +188,16 @@
                     selectBin(bin);
                 }
             };
-            binList.insertBefore(binItem, binList.lastElementChild);
-        });
+            return binItem;
+        }
+
+        function renderBinList(binsToRender) {
+            binListContainer.innerHTML = '';
+            binsToRender.forEach(bin => {
+                const binItem = createBinItem(bin);
+                binListContainer.appendChild(binItem);
+            });
+        }
 
         function selectBin(bin) {
             map.setView([bin.lat, bin.lng], 16);
@@ -179,9 +208,30 @@
         }
 
         // Add markers to the map
-        bins.forEach(bin => {
-            L.marker([bin.lat, bin.lng]).addTo(map)
+        const markers = bins.map(bin => {
+            return L.marker([bin.lat, bin.lng]).addTo(map)
                 .bindPopup(`<strong>${bin.name}</strong><br>Latitude: ${bin.lat}<br>Longitude: ${bin.lng}`);
+        });
+
+        // Initial render
+        renderBinList(bins);
+
+        // Search functionality
+        searchInput.addEventListener('input', function() {
+            const searchTerm = this.value.toLowerCase();
+            const filteredBins = bins.filter(bin => 
+                bin.name.toLowerCase().includes(searchTerm)
+            );
+            renderBinList(filteredBins);
+
+            // Update map markers
+            markers.forEach((marker, index) => {
+                if (filteredBins.includes(bins[index])) {
+                    marker.addTo(map);
+                } else {
+                    marker.remove();
+                }
+            });
         });
     </script>
 </body>
