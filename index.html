@@ -11,11 +11,15 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="EnviroCODE">
+    <meta name="theme-color" content="#4a4e69">
     
     <!-- Home screen icon -->
     <link rel="apple-touch-icon" href="icon.png" sizes="180x180">
     
     <style>
+        :root {
+            --header-color: #4a4e69;
+        }
         body, html {
             height: 100%;
             margin: 0;
@@ -42,7 +46,7 @@
             height: 30%;
         }
         .header {
-            background-color: #4a4e69;
+            background-color: var(--header-color);
             color: #ffffff;
             padding: 8px;
             text-align: center;
@@ -75,11 +79,11 @@
         }
         .bin-item:hover, .bin-item:focus {
             background-color: #f0f0f0;
-            outline: 1px solid #4a4e69;
+            outline: 1px solid var(--header-color);
         }
         .bin-icon {
             margin-right: 8px;
-            color: #4a4e69;
+            color: var(--header-color);
         }
         .leaflet-popup-content-wrapper {
             background-color: #ffffff;
@@ -101,7 +105,7 @@
         #location-button {
             margin: 8px;
             padding: 8px;
-            background-color: #4a4e69;
+            background-color: var(--header-color);
             color: white;
             border: none;
             border-radius: 4px;
@@ -110,14 +114,20 @@
             width: calc(100% - 16px);
         }
         @media (max-width: 767px) {
+            body {
+                padding-top: env(safe-area-inset-top);
+            }
             #bin-list {
                 height: 70%;
             }
             .bin-list-container {
-                max-height: calc(70vh - 160px);
+                max-height: calc(70vh - 160px - env(safe-area-inset-top));
             }
             #map {
                 height: 30vh;
+            }
+            .header {
+                padding-top: calc(8px + env(safe-area-inset-top));
             }
         }
         @media (min-width: 768px) {
