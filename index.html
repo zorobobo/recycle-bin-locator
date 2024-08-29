@@ -27,7 +27,7 @@
             display: flex;
             flex-direction: column;
             height: 100%;
-            overflow: hidden;
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
         }
         #bin-list {
             width: 100%;
@@ -44,9 +44,9 @@
         .header {
             background-color: #4a4e69;
             color: #ffffff;
-            padding: 15px;
+            padding: 20px;
             text-align: center;
-            font-size: 20px;
+            font-size: 24px;
             font-weight: bold;
         }
         .search-container {
@@ -55,9 +55,10 @@
         }
         #search-input {
             width: 100%;
-            padding: 8px;
+            padding: 10px;
             border: 1px solid #ddd;
             border-radius: 4px;
+            font-size: 16px;
             box-sizing: border-box;
         }
         .bin-list-container {
@@ -118,6 +119,15 @@
             white-space: nowrap;
             border-width: 0;
         }
+        #location-button {
+            margin: 10px;
+            padding: 10px;
+            background-color: #4a4e69;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
     </style>
 </head>
 <body>
@@ -127,8 +137,9 @@
                 <i class="fas fa-recycle" aria-hidden="true"></i> EnviroCODE - Recycle Bin Locator by SKPK Jalan Batu
             </div>
             <div class="search-container">
-                <input type="text" id="search-input" placeholder="Search for a bin location..." aria-label="Search for a bin location">
+                <input type="text" id="search-input" placeholder="Search for a recycle bin..." aria-label="Search for a recycle bin">
             </div>
+            <button id="location-button">Find Nearest Bin</button>
             <div class="bin-list-container">
                 <nav aria-label="Recycle bin locations">
                     <ul id="bin-list-items" class="sr-only"></ul>
@@ -163,10 +174,11 @@
             attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
         }).addTo(map);
 
+        // Create bin list
         const binListContainer = document.querySelector('.bin-list-container');
         const binListItems = document.getElementById('bin-list-items');
         const searchInput = document.getElementById('search-input');
-        let markers = [];
+        const locationButton = document.getElementById('location-button');
 
         function createBinItem(bin) {
             const binItem = document.createElement('div');
@@ -190,30 +202,12 @@
             return binItem;
         }
 
-        function displayBins(binsToShow) {
-            // Clear existing bin items
+        function renderBinList(binsToRender) {
             binListContainer.innerHTML = '';
-            binListItems.innerHTML = '';
-
-            // Clear existing markers
-            markers.forEach(marker => map.removeLayer(marker));
-            markers = [];
-
-            // Add filtered bins and markers
-            binsToShow.forEach(bin => {
+            binsToRender.forEach(bin => {
                 const binItem = createBinItem(bin);
                 binListContainer.appendChild(binItem);
-
-                const marker = L.marker([bin.lat, bin.lng]).addTo(map)
-                    .bindPopup(`<strong>${bin.name}</strong><br>Latitude: ${bin.lat}<br>Longitude: ${bin.lng}`);
-                markers.push(marker);
             });
-
-            // Adjust map view if there are bins to show
-            if (binsToShow.length > 0) {
-                const group = new L.featureGroup(markers);
-                map.fitBounds(group.getBounds().pad(0.1));
-            }
         }
 
         function selectBin(bin) {
@@ -224,19 +218,82 @@
                 .openOn(map);
         }
 
-        function filterBins(query) {
-            return bins.filter(bin => 
-                bin.name.toLowerCase().includes(query.toLowerCase())
-            );
-        }
-
-        searchInput.addEventListener('input', function() {
-            const filteredBins = filterBins(this.value);
-            displayBins(filteredBins);
+        // Add markers to the map
+        const markers = bins.map(bin => {
+            return L.marker([bin.lat, bin.lng]).addTo(map)
+                .bindPopup(`<strong>${bin.name}</strong><br>Latitude: ${bin.lat}<br>Longitude: ${bin.lng}`);
         });
 
-        // Initial display of all bins
-        displayBins(bins);
+        // Initial render
+        renderBinList(bins);
+
+        // Search functionality
+        searchInput.addEventListener('input', function() {
+            const searchTerm = this.value.toLowerCase();
+            const filteredBins = bins.filter(bin => 
+                bin.name.toLowerCase().includes(searchTerm)
+            );
+            renderBinList(filteredBins);
+
+            // Update map markers
+            markers.forEach((marker, index) => {
+                if (filteredBins.includes(bins[index])) {
+                    marker.addTo(map);
+                } else {
+                    marker.remove();
+                }
+            });
+        });
+
+        // Geolocation functionality
+        locationButton.addEventListener('click', function() {
+            if ("geolocation" in navigator) {
+                navigator.geolocation.getCurrentPosition(function(position) {
+                    const userLat = position.coords.latitude;
+                    const userLng = position.coords.longitude;
+                    
+                    // Find nearest bin
+                    let nearestBin = bins[0];
+                    let shortestDistance = Infinity;
+                    bins.forEach(bin => {
+                        const distance = calculateDistance(userLat, userLng, bin.lat, bin.lng);
+                        if (distance < shortestDistance) {
+                            shortestDistance = distance;
+                            nearestBin = bin;
+                        }
+                    });
+
+                    // Center map on user location and show nearest bin
+                    map.setView([userLat, userLng], 16);
+                    L.marker([userLat, userLng]).addTo(map)
+                        .bindPopup('Your Location').openPopup();
+                    selectBin(nearestBin);
+                }, function(error) {
+                    console.error("Error: " + error.message);
+                    alert("Unable to retrieve your location. Please make sure location services are enabled.");
+                });
+            } else {
+                alert("Geolocation is not supported by your browser.");
+            }
+        });
+
+        function calculateDistance(lat1, lon1, lat2, lon2) {
+            const R = 6371; // Radius of the earth in km
+            const dLat = deg2rad(lat2-lat1);
+            const dLon = deg2rad(lon2-lon1); 
+            const a = 
+                Math.sin(dLat/2) * Math.sin(dLat/2) +
+                Math.cos(deg2rad(lat1)) * Math.cos(deg2rad(lat2)) * 
+                Math.sin(dLon/2) * Math.sin(dLon/2)
+            ; 
+            const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a)); 
+            const d = R * c; // Distance in km
+            return d;
+        }
+
+        function deg2rad(deg) {
+            return deg * (Math.PI/180);
+        }
     </script>
 </body>
 </html>
