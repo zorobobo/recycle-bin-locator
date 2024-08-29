@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Recycle Bin Locator</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/leaflet.css" />
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.1/css/all.min.css" rel="stylesheet">
+    <style>
+        body, html {
+            height: 100%;
+            margin: 0;
+            padding: 0;
+            font-family: 'Arial', sans-serif;
+            background-color: #f0f4f8;
+        }
+        .container {
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
+        }
+        #bin-list {
+            width: 100%;
+            height: 50%;
+            overflow-y: auto;
+            background-color: #ffffff;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+        }
+        #map {
+            flex-grow: 1;
+            height: 50%;
+        }
+        .header {
+            background-color: #4a4e69;
+            color: #ffffff;
+            padding: 20px;
+            text-align: center;
+            font-size: 24px;
+            font-weight: bold;
+        }
+        .bin-item {
+            cursor: pointer;
+            padding: 15px;
+            border-bottom: 1px solid #e0e0e0;
+            transition: background-color 0.3s ease;
+        }
+        .bin-item:hover, .bin-item:focus {
+            background-color: #f0f0f0;
+            outline: 2px solid #4a4e69;
+        }
+        .bin-icon {
+            margin-right: 10px;
+            color: #4a4e69;
+        }
+        .leaflet-popup-content-wrapper {
+            background-color: #ffffff;
+            color: #333;
+            border-radius: 8px;
+            padding: 10px;
+            box-shadow: 0 3px 14px rgba(0,0,0,0.4);
+        }
+        .leaflet-popup-tip {
+            background-color: #ffffff;
+        }
+        .copyright {
+            text-align: center;
+            padding: 10px;
+            font-size: 12px;
+            color: #666;
+            background-color: #f0f0f0;
+        }
+        @media (min-width: 768px) {
+            .container {
+                flex-direction: row;
+            }
+            #bin-list {
+                width: 300px;
+                height: 100%;
+            }
+            #map {
+                height: 100%;
+            }
+        }
+        .sr-only {
+            position: absolute;
+            width: 1px;
+            height: 1px;
+            padding: 0;
+            margin: -1px;
+            overflow: hidden;
+            clip: rect(0, 0, 0, 0);
+            white-space: nowrap;
+            border-width: 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div id="bin-list">
+            <div class="header" role="banner">
+                <i class="fas fa-recycle" aria-hidden="true"></i> Recycle Bin Locator
+            </div>
+            <nav aria-label="Recycle bin locations">
+                <ul id="bin-list-items" class="sr-only"></ul>
+            </nav>
+            <div class="copyright">
+                © 2024 Murid-murid Sekolah Kebangsaan Pendidikan Khas Jalan Batu (Buta), Kuala Lumpur. Hak Cipta Terpelihara.
+            </div>
+        </div>
+        <div id="map" role="application" aria-label="Map showing recycle bin locations"></div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/leaflet.js"></script>
+    <script>
+        // Sample data for recycle bins
+        const bins = [
+            { id: 1, name: "SKPK Jalan Batu - Jalan Raja Laut", lat: 3.159840, lng: 101.694977 },
+            { id: 2, name: "Stesen Masjid Jamek - Jalan Tun Perak", lat: 3.1494076, lng: 101.696461 },
+            { id: 3, name: "Menara Dayabumi - Jalan Sultan Hishamuddin", lat: 3.14496495, lng: 101.694069 },
+            { id: 4, name: "Pasar Seni - Jalan Tun Tan Cheng Lock", lat: 3.145776, lng: 101.695568 },
+            { id: 5, name: "Menara Maybank - Jalan Tun Perak", lat: 3.147425, lng: 101.699398 },
+            { id: 6, name: "Stesen Pasar Seni - Jalan Tun H.S. Lee", lat: 3.142326, lng: 101.696244 },
+            { id: 7, name: "IPD Dang Wangi - Jalan Dang Wangi", lat: 3.156252, lng: 101.697864 },
+            { id: 8, name: "Medan Mara - Jalan Raja Laut", lat: 3.158224, lng: 101.695150 },
+            { id: 9, name: "Menara Liberty - Jalan Sultan Ismail", lat: 3.161020, lng: 101.695847 },
+            { id: 10, name: "Menara FGV - Jalan Raja Laut", lat: 3.161673, lng: 101.694785 }
+        ];
+
+        // Initialize map
+        const map = L.map('map').setView([3.159840, 101.694977], 16);
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+        }).addTo(map);
+
+        // Create bin list
+        const binList = document.getElementById('bin-list');
+        const binListItems = document.getElementById('bin-list-items');
+        bins.forEach(bin => {
+            const binItem = document.createElement('div');
+            binItem.className = 'bin-item';
+            binItem.setAttribute('tabindex', '0');
+            binItem.setAttribute('role', 'button');
+            binItem.setAttribute('aria-label', `View ${bin.name} on map`);
+            binItem.innerHTML = `<i class="fas fa-recycle bin-icon" aria-hidden="true"></i>${bin.name}`;
+            
+            const listItem = document.createElement('li');
+            listItem.textContent = bin.name;
+            binListItems.appendChild(listItem);
+
+            binItem.onclick = () => selectBin(bin);
+            binItem.onkeypress = (e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    selectBin(bin);
+                }
+            };
+            binList.insertBefore(binItem, binList.lastElementChild);
+        });
+
+        function selectBin(bin) {
+            map.setView([bin.lat, bin.lng], 16);
+            L.popup()
+                .setLatLng([bin.lat, bin.lng])
+                .setContent(`<strong>${bin.name}</strong><br>Latitude: ${bin.lat}<br>Longitude: ${bin.lng}`)
+                .openOn(map);
+        }
+
+        // Add markers to the map
+        bins.forEach(bin => {
+            L.marker([bin.lat, bin.lng]).addTo(map)
+                .bindPopup(`<strong>${bin.name}</strong><br>Latitude: ${bin.lat}<br>Longitude: ${bin.lng}`);
+        });
+    </script>
+</body>
+</html>
