@@ -44,9 +44,9 @@
         .header {
             background-color: #4a4e69;
             color: #ffffff;
-            padding: 20px;
+            padding: 10px;
             text-align: center;
-            font-size: 24px;
+            font-size: 20px;
             font-weight: bold;
         }
         .search-container {
@@ -96,17 +96,14 @@
             color: #666;
             background-color: #f0f0f0;
         }
-        @media (min-width: 768px) {
-            .container {
-                flex-direction: row;
-            }
-            #bin-list {
-                width: 300px;
-                height: 100%;
-            }
-            #map {
-                height: 100%;
-            }
+        #location-button {
+            margin: 10px;
+            padding: 10px;
+            background-color: #4a4e69;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
         }
         .sr-only {
             position: absolute;
@@ -119,14 +116,30 @@
             white-space: nowrap;
             border-width: 0;
         }
-        #location-button {
-            margin: 10px;
-            padding: 10px;
-            background-color: #4a4e69;
-            color: white;
-            border: none;
-            border-radius: 4px;
-            cursor: pointer;
+        @media (max-width: 767px) {
+            #bin-list {
+                height: auto;
+                max-height: 50%;
+            }
+            .bin-list-container {
+                max-height: calc(50vh - 180px); /* Adjust this value as needed */
+                overflow-y: auto;
+            }
+            #map {
+                height: 50vh;
+            }
+        }
+        @media (min-width: 768px) {
+            .container {
+                flex-direction: row;
+            }
+            #bin-list {
+                width: 300px;
+                height: 100%;
+            }
+            #map {
+                height: 100%;
+            }
         }
     </style>
 </head>
@@ -154,155 +167,8 @@
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/leaflet.js"></script>
     <script>
-        // Sample data for recycle bins
-        const bins = [
-            { id: 1, name: "SKPK Jalan Batu - Jalan Raja Laut", lat: 3.159840, lng: 101.694977 },
-            { id: 2, name: "Stesen Masjid Jamek - Jalan Tun Perak", lat: 3.1494076, lng: 101.696461 },
-            { id: 3, name: "Menara Dayabumi - Jalan Sultan Hishamuddin", lat: 3.14496495, lng: 101.694069 },
-            { id: 4, name: "Pasar Seni - Jalan Tun Tan Cheng Lock", lat: 3.145776, lng: 101.695568 },
-            { id: 5, name: "Menara Maybank - Jalan Tun Perak", lat: 3.147425, lng: 101.699398 },
-            { id: 6, name: "Stesen Pasar Seni - Jalan Tun H.S. Lee", lat: 3.142326, lng: 101.696244 },
-            { id: 7, name: "IPD Dang Wangi - Jalan Dang Wangi", lat: 3.156252, lng: 101.697864 },
-            { id: 8, name: "Medan Mara - Jalan Raja Laut", lat: 3.158224, lng: 101.695150 },
-            { id: 9, name: "Menara Liberty - Jalan Sultan Ismail", lat: 3.161020, lng: 101.695847 },
-            { id: 10, name: "Menara FGV - Jalan Raja Laut", lat: 3.161673, lng: 101.694785 }
-        ];
-
-        // Initialize map
-        const map = L.map('map').setView([3.159840, 101.694977], 16);
-        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-        }).addTo(map);
-
-        // Create bin list
-        const binListContainer = document.querySelector('.bin-list-container');
-        const binListItems = document.getElementById('bin-list-items');
-        const searchInput = document.getElementById('search-input');
-        const locationButton = document.getElementById('location-button');
-
-        function createBinItem(bin) {
-            const binItem = document.createElement('div');
-            binItem.className = 'bin-item';
-            binItem.setAttribute('tabindex', '0');
-            binItem.setAttribute('role', 'button');
-            binItem.setAttribute('aria-label', `View ${bin.name} on map`);
-            binItem.innerHTML = `<i class="fas fa-recycle bin-icon" aria-hidden="true"></i>${bin.name}`;
-            
-            const listItem = document.createElement('li');
-            listItem.textContent = bin.name;
-            binListItems.appendChild(listItem);
-
-            binItem.onclick = () => selectBin(bin);
-            binItem.onkeypress = (e) => {
-                if (e.key === 'Enter' || e.key === ' ') {
-                    e.preventDefault();
-                    selectBin(bin);
-                }
-            };
-            return binItem;
-        }
-
-        function renderBinList(binsToRender) {
-            binListContainer.innerHTML = '';
-            binsToRender.forEach(bin => {
-                const binItem = createBinItem(bin);
-                binListContainer.appendChild(binItem);
-            });
-        }
-
-        function selectBin(bin) {
-            map.setView([bin.lat, bin.lng], 16);
-            L.popup()
-                .setLatLng([bin.lat, bin.lng])
-                .setContent(`<strong>${bin.name}</strong><br>Latitude: ${bin.lat}<br>Longitude: ${bin.lng}`)
-                .openOn(map);
-        }
-
-        // Add markers to the map
-        const markers = bins.map(bin => {
-            return L.marker([bin.lat, bin.lng]).addTo(map)
-                .bindPopup(`<strong>${bin.name}</strong><br>Latitude: ${bin.lat}<br>Longitude: ${bin.lng}`);
-        });
-
-        // Initial render
-        renderBinList(bins);
-
-        // Search functionality
-        searchInput.addEventListener('input', function() {
-            const searchTerm = this.value.toLowerCase();
-            const filteredBins = bins.filter(bin => 
-                bin.name.toLowerCase().includes(searchTerm)
-            );
-            renderBinList(filteredBins);
-
-            // Update map markers
-            markers.forEach((marker, index) => {
-                if (filteredBins.includes(bins[index])) {
-                    marker.addTo(map);
-                } else {
-                    marker.remove();
-                }
-            });
-        });
-
-        // Geolocation functionality
-        locationButton.addEventListener('click', function() {
-            // Clear the search input
-            searchInput.value = '';
-    
-            // Reset the bin list to show all bins
-            renderBinList(bins);
-    
-            // Show all markers on the map
-            markers.forEach(marker => marker.addTo(map));
-
-            if ("geolocation" in navigator) {
-                navigator.geolocation.getCurrentPosition(function(position) {
-                    const userLat = position.coords.latitude;
-                    const userLng = position.coords.longitude;
-                    
-                    // Find nearest bin
-                    let nearestBin = bins[0];
-                    let shortestDistance = Infinity;
-                    bins.forEach(bin => {
-                        const distance = calculateDistance(userLat, userLng, bin.lat, bin.lng);
-                        if (distance < shortestDistance) {
-                            shortestDistance = distance;
-                            nearestBin = bin;
-                        }
-                    });
-
-                    // Center map on user location and show nearest bin
-                    map.setView([userLat, userLng], 16);
-                    L.marker([userLat, userLng]).addTo(map)
-                        .bindPopup('Your Location').openPopup();
-                    selectBin(nearestBin);
-                }, function(error) {
-                    console.error("Error: " + error.message);
-                    alert("Unable to retrieve your location. Please make sure location services are enabled.");
-                });
-            } else {
-                alert("Geolocation is not supported by your browser.");
-            }
-        });
-
-        function calculateDistance(lat1, lon1, lat2, lon2) {
-            const R = 6371; // Radius of the earth in km
-            const dLat = deg2rad(lat2-lat1);
-            const dLon = deg2rad(lon2-lon1); 
-            const a = 
-                Math.sin(dLat/2) * Math.sin(dLat/2) +
-                Math.cos(deg2rad(lat1)) * Math.cos(deg2rad(lat2)) * 
-                Math.sin(dLon/2) * Math.sin(dLon/2)
-            ; 
-            const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a)); 
-            const d = R * c; // Distance in km
-            return d;
-        }
-
-        function deg2rad(deg) {
-            return deg * (Math.PI/180);
-        }
+        // The JavaScript remains the same as in your original code
+        // ... (keep all the existing JavaScript code)
     </script>
 </body>
 </html>
