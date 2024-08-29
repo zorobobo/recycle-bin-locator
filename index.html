@@ -64,6 +64,7 @@
         .bin-list-container {
             flex-grow: 1;
             overflow-y: auto;
+            -webkit-overflow-scrolling: touch;
         }
         .bin-item {
             cursor: pointer;
@@ -105,23 +106,12 @@
             border-radius: 4px;
             cursor: pointer;
         }
-        .sr-only {
-            position: absolute;
-            width: 1px;
-            height: 1px;
-            padding: 0;
-            margin: -1px;
-            overflow: hidden;
-            clip: rect(0, 0, 0, 0);
-            white-space: nowrap;
-            border-width: 0;
-        }
         @media (max-width: 767px) {
             #bin-list {
                 height: 60%;
             }
             .bin-list-container {
-                max-height: calc(60vh - 180px); /* Adjusted for 60% height */
+                max-height: calc(60vh - 180px);
                 overflow-y: auto;
             }
             #map {
@@ -149,13 +139,12 @@
                 <i class="fas fa-recycle" aria-hidden="true"></i> EnviroCODE - Bin Locator
             </div>
             <div class="search-container">
+                <label for="search-input" class="sr-only">Search for a recycle bin</label>
                 <input type="text" id="search-input" placeholder="Taip untuk cari Tong Kitar Semula..." aria-label="Taip untuk cari Tong Kitar Semula">
             </div>
             <button id="location-button">Tekan untuk Tong Kitar Semula Terdekat</button>
             <div class="bin-list-container">
-                <nav aria-label="Recycle bin locations">
-                    <ul id="bin-list-items" class="sr-only"></ul>
-                </nav>
+                <ul id="bin-list-items" role="list" aria-label="Recycle bin locations"></ul>
             </div>
             <div class="copyright">
                 © 2024 Murid-murid Sekolah Kebangsaan Pendidikan Khas Jalan Batu (Buta), Kuala Lumpur. Hak Cipta Terpelihara.
@@ -193,32 +182,28 @@
         const locationButton = document.getElementById('location-button');
 
         function createBinItem(bin) {
-            const binItem = document.createElement('div');
-            binItem.className = 'bin-item';
-            binItem.setAttribute('tabindex', '0');
-            binItem.setAttribute('role', 'button');
-            binItem.setAttribute('aria-label', `View ${bin.name} on map`);
-            binItem.innerHTML = `<i class="fas fa-recycle bin-icon" aria-hidden="true"></i>${bin.name}`;
-            
             const listItem = document.createElement('li');
-            listItem.textContent = bin.name;
-            binListItems.appendChild(listItem);
-
-            binItem.onclick = () => selectBin(bin);
-            binItem.onkeypress = (e) => {
+            listItem.className = 'bin-item';
+            listItem.setAttribute('tabindex', '0');
+            listItem.setAttribute('role', 'button');
+            listItem.setAttribute('aria-label', `View ${bin.name} on map`);
+            listItem.innerHTML = `<i class="fas fa-recycle bin-icon" aria-hidden="true"></i>${bin.name}`;
+            
+            listItem.onclick = () => selectBin(bin);
+            listItem.onkeypress = (e) => {
                 if (e.key === 'Enter' || e.key === ' ') {
                     e.preventDefault();
                     selectBin(bin);
                 }
             };
-            return binItem;
+            return listItem;
         }
 
         function renderBinList(binsToRender) {
-            binListContainer.innerHTML = '';
+            binListItems.innerHTML = '';
             binsToRender.forEach(bin => {
                 const binItem = createBinItem(bin);
-                binListContainer.appendChild(binItem);
+                binListItems.appendChild(binItem);
             });
         }
 
